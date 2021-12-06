@@ -1,16 +1,13 @@
 {
   "name": "diffhtml-deltas",
   "version": "1.0.0",
-  "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "npx http-server",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "npx http-server"
   },
-  "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
-    "diffhtml": "^1.0.0-beta.20",
-    "diffhtml-components": "^1.0.0-beta.20"
+    "diffhtml": "^1.0.0-beta.21",
+    "diffhtml-components": "^1.0.0-beta.21"
   }
 }

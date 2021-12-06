@@ -3,8 +3,9 @@ export const getUUID = () => URL.createObjectURL(new Blob([])).substring(31);
 
 const { assign } = Object;
 const linker = new Map();
+const callers = new Map();
 
-export const workerTask = config => assign(transaction => {
+export const workerTask = config => assign(function workerTask(transaction) {
   const currentTasks = transaction.tasks;
   const indexOfPatchNode = currentTasks.indexOf(Internals.tasks.patchNode);
 
@@ -22,7 +23,9 @@ export const workerTask = config => assign(transaction => {
     }
 
     if (typeof x === 'function') {
+      const fn = x;
       x = { __caller: getUUID() };
+      callers.set(x.__caller, fn);
     }
 
     return x;
@@ -48,6 +51,6 @@ export const workerTask = config => assign(transaction => {
   releaseHook: vTree => linker.delete(vTree),
 
   subscribe: () => {
-    //window = new Proxy({}, 
+    //window = new Proxy({},
   },
 });

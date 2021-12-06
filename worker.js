@@ -8,10 +8,12 @@ use(workerTask());
 const threadId = getUUID();
 const mount = createTree(null);
 
-const render = state => innerHTML(mount, html`
-  <${App} threadId=${state.threadId} />
-`);
+const render = state => {
+  innerHTML(mount, html`
+    <${App} threadId=${state.threadId} render=${render} />
+  `);
+};
 
-setInterval(() => {
-  render({ threadId });
-}, 16);
+render({ threadId });
+
+setInterval(() => render({ threadId }), 1000/60);
