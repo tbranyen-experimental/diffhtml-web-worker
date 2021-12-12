@@ -7,6 +7,7 @@ const callers = new Map();
 
 export const workerTask = ({
   send,
+  getProperty,
 }) => assign(function workerTask(transaction) {
   if (!send) { send = postMessage; }
 
@@ -53,12 +54,20 @@ export const workerTask = ({
   currentTasks.splice(indexOfPatchNode, 1, function skipPatch() {
     const patches = link(transaction.patches);
     if (typeof send !== 'undefined') {
-      send(patches);
+      send(transaction.config.uuid, patches);
     }
     transaction.end();
     return patches;
   });
 }, {
+  subscribe: () => {
+    global.window = new Proxy({}, {
+      get(keyName) {
+        return getProperty('window', keyName);
+      }
+    });
+  },
+
   createTreeHook: (vTree) => {
     for (const attrName in vTree.attributes) {
       if (typeof vTree.attributes[attrName] === 'function') {

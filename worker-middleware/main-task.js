@@ -1,4 +1,4 @@
-import { Internals } from 'diffhtml';
+const { Internals } = diff;
 
 const { assign } = Object;
 const linker = new Map();

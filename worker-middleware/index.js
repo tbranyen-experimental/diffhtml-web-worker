@@ -1,4 +1,4 @@
-import { innerHTML } from 'diffhtml';
+const { innerHTML } = diff;
 
 export const createWorker = mount => (path, options) => {
   const worker = new Worker(path, options);

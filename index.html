@@ -3,19 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>diffHTML Web Worker Testing</title>
 </head>
 <body>
   <main id="main"></main>
 
-  <script type="importmap">
-    {
-      "imports": {
-        "diffhtml": "/node_modules/diffhtml/dist/es/lite.js"
-      }
-    }
-  </script>
-
-  <script type="module" src="./index.js"></script>
+  <script src="/node_modules/diffhtml/dist/diffhtml-lite.min.js"></script>
+  <script type="module" src="/index.js"></script>
 </body>
 </html>

@@ -35,7 +35,9 @@ export default function App({ threadId, windowHeight, render }) {
 
       ${renderClock(new Date())}
 
-      <i>${String(new Date())}</i>
+      <p>
+        <i>${String(new Date())}</i>
+      </p>
 
       <h3>Do we have window height? ${String(typeof windowHeight === 'number')}</h3>
 
