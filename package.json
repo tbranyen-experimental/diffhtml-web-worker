@@ -3,11 +3,16 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "npx http-server"
+    "start": "node server.js"
   },
+  "type": "module",
   "license": "MIT",
   "dependencies": {
+    "bufferutil": "^4.0.5",
     "diffhtml": "^1.0.0-beta.21",
-    "diffhtml-components": "^1.0.0-beta.21"
+    "diffhtml-components": "^1.0.0-beta.21",
+    "express": "^4.17.1",
+    "utf-8-validate": "^5.0.7",
+    "ws": "^8.3.0"
   }
 }

@@ -1,31 +1,48 @@
-import { Internals } from '../node_modules/diffhtml/dist/es/index.js';
-export const getUUID = () => URL.createObjectURL(new Blob([])).substring(31);
+import { Internals } from 'diffhtml';
+import { getUUID } from './get-uuid.js';
 
 const { assign } = Object;
 const linker = new Map();
 const callers = new Map();
 
-export const workerTask = config => assign(function workerTask(transaction) {
+export const workerTask = ({
+  send,
+}) => assign(function workerTask(transaction) {
+  if (!send) { send = postMessage; }
+
+  if (transaction.config.skipWorker) {
+    return undefined;
+  }
+
   const currentTasks = transaction.tasks;
   const indexOfPatchNode = currentTasks.indexOf(Internals.tasks.patchNode);
 
   const link = patches => patches.map(x => {
     // Already found, return.
     if (linker.has(x)) {
-      return { __link: linker.get(x) };
+      return linker.get(x);
     }
 
     // If x is a protected VTree (meaning it's used)
     if (Internals.Pool.memory.protected.has(x) || Internals.Pool.memory.allocated.has(x)) {
       // Needs a link added.
-      x.__link = x === transaction.oldTree ? 'mount' : getUUID();
-      linker.set(x, x.__link);
+      const __link = x === transaction.oldTree ? 'mount' : getUUID();
+      const isSvg = transaction.state.svgElements.has(x) || x.nodeName === 'svg';
+      const retVal = {
+        __link,
+        isSvg,
+      };
+
+      linker.set(x, retVal);
+      x.isSvg = isSvg;
+      x.__link = __link;
+      return x;
     }
 
     if (typeof x === 'function') {
-      const fn = x;
-      x = { __caller: getUUID() };
-      callers.set(x.__caller, fn);
+      const __caller = getUUID();
+      callers.set(__caller, x);
+      return { __caller };
     }
 
     return x;
@@ -34,9 +51,11 @@ export const workerTask = config => assign(function workerTask(transaction) {
   // Replace patchNode with skipPatch and return array of patches
   // synchronously
   currentTasks.splice(indexOfPatchNode, 1, function skipPatch() {
-    transaction.end();
     const patches = link(transaction.patches);
-    postMessage(patches);
+    if (typeof send !== 'undefined') {
+      send(patches);
+    }
+    transaction.end();
     return patches;
   });
 }, {
@@ -49,8 +68,4 @@ export const workerTask = config => assign(function workerTask(transaction) {
   },
 
   releaseHook: vTree => linker.delete(vTree),
-
-  subscribe: () => {
-    //window = new Proxy({},
-  },
 });

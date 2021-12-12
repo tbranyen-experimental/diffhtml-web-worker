@@ -1,22 +1,22 @@
-import { innerHTML, html, use } from './node_modules/diffhtml/dist/es/index.js';
-import { mainTask, createWorker } from './worker-middleware/index.js';
+import { use, innerHTML } from 'diffhtml';
+import { mainTask } from '/worker-middleware/index.js';
 
-use(mainTask())
+use(mainTask());
 
-const useWorker = path => {
-  const mount = document.createElement('div');
-  mount.style.display = 'inline-block';
-  createWorker(mount)(path, { type: 'module' });
-  return mount;
-};
+const ws = new WebSocket('ws://127.0.0.1:8000');
+const element = document.createElement('div');
 
-// Use 4 workers
+function decodeEntities(string) {
+  // If there are no HTML entities, we can safely pass the string through.
+  if (!element || !string || !string.indexOf || !string.includes('&')) {
+    return string;
+  }
 
-innerHTML(main, html`
-  <h1>Workers:</h1>
-  ${useWorker('./worker.js')}
-  ${useWorker('./worker.js')}
-  <hr />
-  ${useWorker('./worker.js')}
-  ${useWorker('./worker.js')}
-`);
+  element.innerHTML = string;
+  return element.textContent || '';
+}
+
+ws.addEventListener('message', async e => {
+  const patches = JSON.parse(e.data);
+  innerHTML(main, null, { patches });
+});
