@@ -7,6 +7,8 @@ export const mainTask = ({
   // Eventually we'll need to use a service worker to have a partytown-like
   // experience to the UI thread.
   swPath = '/service-worker.js',
+  // WebSocket connection for the main thread.
+  ws = null,
 } = {}) => assign(function webWorkerTask(transaction) {
   const currentTasks = transaction.tasks;
   const indexOfSyncTrees = currentTasks.indexOf(Internals.tasks.syncTrees);
@@ -26,7 +28,21 @@ export const mainTask = ({
 
   // Replace syncTrees with injectPatches
   currentTasks.splice(indexOfSyncTrees, 1, function injectPatches() {
-    transaction.patches = transaction.config.patches.map((x, i) => {
+    transaction.patches = transaction.config.patches.map(x => {
+      // Handle dom events, custom element properties, etc. Any time you need
+      // a function, we proxy the call and the arguments.
+      if (x && x.__caller) {
+        const caller = x.__caller;
+
+        return async function(e) {
+          // tbd handled by synthetic events middleware
+          e.preventDefault();
+          e.stopPropagation();
+
+          ws.send(JSON.stringify({ type: 'caller', ...x }));
+        };
+      }
+
       if (!x || typeof x !== 'object' || !('__link' in x)) {
         return x;
       }
@@ -49,22 +65,6 @@ export const mainTask = ({
       }
 
       return vTree;
-
-      //if ('__caller' in x) {
-      //  const caller = x.__caller;
-
-      //  x = async function(e) {
-      //    // tbd handled by synthetic events middleware
-      //    e.preventDefault();
-      //    e.stopPropagation();
-
-      //    //wrap args
-
-      //    await fetch(`/<function>/${String(caller)}`);
-      //    //store & wrap event
-      //    //send
-      //  };
-      //}
     });
   });
 }, {

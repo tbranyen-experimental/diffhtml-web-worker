@@ -2,12 +2,12 @@ import { Internals } from 'diffhtml';
 import { getUUID } from './get-uuid.js';
 
 const { assign } = Object;
-const linker = new Map();
-const callers = new Map();
+const linker = new WeakMap();
 
 export const workerTask = ({
   send,
-  getProperty,
+  callers = new Map(),
+  controller = {},
 }) => assign(function workerTask(transaction) {
   if (!send) { send = postMessage; }
 
@@ -22,6 +22,17 @@ export const workerTask = ({
     // Already found, return.
     if (linker.has(x)) {
       return linker.get(x);
+    }
+
+    if (x && x.__caller) {
+      return { __caller: x.__caller };
+    }
+
+    if (typeof x === 'function') {
+      const __caller = getUUID();
+      callers.set(__caller, x);
+      x.__caller = __caller;
+      return { __caller };
     }
 
     // If x is a protected VTree (meaning it's used)
@@ -40,12 +51,6 @@ export const workerTask = ({
       return x;
     }
 
-    if (typeof x === 'function') {
-      const __caller = getUUID();
-      callers.set(__caller, x);
-      return { __caller };
-    }
-
     return x;
   });
 
@@ -61,20 +66,37 @@ export const workerTask = ({
   });
 }, {
   subscribe: () => {
+    // Set up external api.
+    controller.callFunction = (uuid, caller) => {
+      callers.get(caller)();
+    };
+
+    const window = {
+      innerHeight: 144,
+    };
+
     global.window = new Proxy({}, {
-      get(keyName) {
-        return getProperty('window', keyName);
-      }
+      get: (target, keyName) => {
+        return window[keyName];
+      },
     });
   },
 
-  createTreeHook: (vTree) => {
-    for (const attrName in vTree.attributes) {
-      if (typeof vTree.attributes[attrName] === 'function') {
-        vTree.attributes[attrName] = { __caller: getUUID() };
-      }
-    }
-  },
+  //createTreeHook: (vTree) => {
+  //  for (const attrName in vTree.attributes) {
+  //    const val = vTree.attributes[attrName];
+
+  //    if (val.__caller) {
+  //      vTree.attributes[attrName] = { __caller: val.__caller };
+  //    }
+  //    else if (typeof val === 'function') {
+  //      const __caller = getUUID();
+  //      vTree.attributes[attrName] = { __caller };
+  //      val.__caller = __caller;
+  //      callers.set(val, vTree.attributes[attrName]);
+  //    }
+  //  }
+  //},
 
   releaseHook: vTree => linker.delete(vTree),
 });

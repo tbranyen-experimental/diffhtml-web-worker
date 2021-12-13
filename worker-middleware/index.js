@@ -3,9 +3,7 @@ const { innerHTML } = diff;
 export const createWorker = mount => (path, options) => {
   const worker = new Worker(path, options);
 
-  worker.onmessage = e => {
-    innerHTML(mount, null, { patches: e.data });
-  };
+  worker.onmessage = e => innerHTML(mount, null, { patches: e.data });
 
   worker.onerror = e => {
     console.log(e);
@@ -17,5 +15,6 @@ export const createWorker = mount => (path, options) => {
 };
 
 export { getUUID } from './get-uuid.js';
+export { createNodeWorker } from './create-node-worker.js';
 export { mainTask } from './main-task.js';
 export { workerTask } from './worker-task.js';

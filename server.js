@@ -7,10 +7,12 @@ import express from 'express';
 import { WebSocketServer } from 'ws';
 import { getUUID } from './worker-middleware/get-uuid.js';
 import { workerTask } from './worker-middleware/worker-task.js';
-import App from './app.js';
+import { createNodeWorker } from './worker-middleware/create-node-worker.js';
+//import App from './app.js';
 
 const ee = new EventEmitter();
 const app = express();
+const controller = {};
 
 // Reuse the web-worker middleware on the server, by default send is
 // postMessage, but that doesn't exist in Node. Instead use a simple event
@@ -18,9 +20,12 @@ const app = express();
 use(workerTask({
   send: (uuid, ...args) => ee.emit(`deltas:${uuid}`, ...args),
 
-  getProperty: async (globalObject, keyName) => {
-    ee.emit('getProperty', { globalObject, keyName });
+  // todo impl
+  getProperty: async (uuid, globalObject, keyName) => {
+    ee.emit(`getProperty:${uuid}`, { globalObject, keyName });
   },
+
+  controller,
 }));
 
 // Serve this directory for static files.
@@ -42,13 +47,16 @@ wss.on('connection', ws => {
 
   let interval = null;
 
-  ee.on('getProperty', property => {
-    const onMessage = e => {
-      ws.off('message', onMessage);
-    };
-
-    ws.on('message', onMessage);
+  ee.on(`getProperty:${uuid}`, property => {
     ws.send(JSON.stringify(property));
+  });
+
+  ws.on('message', msg => {
+    const message = JSON.parse(msg);
+
+    if (message.type === 'caller') {
+      controller.callFunction(uuid, message.__caller);
+    }
   });
 
   // Whenever new deltas arrive, send them over the websocket. You could
@@ -59,13 +67,10 @@ wss.on('connection', ws => {
   ws.on('close', () => {
     release(mount);
     clearInterval(interval);
+    ee.removeAllListeners();
   });
 
-  // Initial render.
-  innerHTML(mount, html`<${App} threadId=${uuid} />`, { uuid });
-
-  // Re-render at an interval.
-  interval = setInterval(() => {
-    innerHTML(mount, html`<${App} threadId=${uuid} />`, { uuid });
-  }, 1000 / 60);
+  createNodeWorker('./server-worker.js', patches => {
+    ws.send(JSON.stringify(patches));
+  });
 });

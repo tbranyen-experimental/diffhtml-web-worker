@@ -1,4 +1,5 @@
 import { html } from 'diffhtml';
+import { createState } from 'diffhtml-components';
 
 const rotate = (time, div) => `rotate(${(time / div) * 360}, 75, 75)`;
 
@@ -23,10 +24,15 @@ function renderClock(time = new Date()) {
   `;
 }
 
-export default function App({ threadId, windowHeight, render }) {
-  // TODO implement function calls and DOM/BOM access
-  function getWindowHeight() {
-    render({ windowHeight: window.innerHeight });
+export default function App({ threadId }) {
+  const [ state, setState ] = createState({
+    windowHeight: null,
+  });
+
+  // TODO implement function calls and DOM/BOM access, keep hoisted from render
+  // to avoid duplication function references.
+  async function getWindowHeight() {
+    console.log(setState({ windowHeight: 144 }));
   }
 
   return html`
@@ -39,12 +45,12 @@ export default function App({ threadId, windowHeight, render }) {
         <i>${String(new Date())}</i>
       </p>
 
-      <h3>Do we have window height? ${String(typeof windowHeight === 'number')}</h3>
+      <h3>Do we have window height? ${String(typeof state.windowHeight === 'number')}</h3>
 
-      <form onsubmit=${getWindowHeight}>
+      <!--<form onsubmit=${getWindowHeight}>-->
+      <form>
         <button>Get Window Height</button>
       </form>
-
     </div>
   `;
 }

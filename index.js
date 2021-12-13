@@ -1,10 +1,11 @@
 import { mainTask } from '/worker-middleware/main-task.js';
 
 const { use, innerHTML } = diff;
+const ws = new WebSocket(`ws://${location.host}`);
 
-use(mainTask());
-
-new WebSocket(`ws://${location.host}`).addEventListener('message', async e => {
+ws.addEventListener('message', async e => {
   const patches = JSON.parse(e.data);
   innerHTML(main, null, { patches });
 });
+
+use(mainTask({ ws }));
