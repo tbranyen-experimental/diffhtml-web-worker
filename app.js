@@ -24,10 +24,12 @@ function renderClock(time = new Date()) {
 }
 
 export default function App({ threadId }) {
+  let windowHeight = null;
+
   // TODO implement function calls and DOM/BOM access, keep hoisted from render
   // to avoid duplication function references.
-  async function getWindowHeight() {
-    console.log(setState({ windowHeight: 144 }));
+  function getWindowHeight() {
+    windowHeight = window.innerHeight;
   }
 
   return html`
@@ -40,7 +42,7 @@ export default function App({ threadId }) {
         <i>${String(new Date())}</i>
       </p>
 
-      <h3>Do we have window height? ${String(typeof state.windowHeight === 'number')}</h3>
+      <h3>Do we have window height? ${String(windowHeight === 'number')}</h3>
 
       <form onsubmit=${getWindowHeight}>
         <button>Get Window Height</button>
