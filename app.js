@@ -47,8 +47,7 @@ export default function App({ threadId }) {
 
       <h3>Do we have window height? ${String(typeof state.windowHeight === 'number')}</h3>
 
-      <!--<form onsubmit=${getWindowHeight}>-->
-      <form>
+      <form onsubmit=${getWindowHeight}>
         <button>Get Window Height</button>
       </form>
     </div>

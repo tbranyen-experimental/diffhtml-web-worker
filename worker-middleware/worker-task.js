@@ -6,7 +6,7 @@ const linker = new WeakMap();
 
 export const workerTask = ({
   send,
-  callers = new Map(),
+  callers,
   controller = {},
 }) => assign(function workerTask(transaction) {
   if (!send) { send = postMessage; }
@@ -14,6 +14,9 @@ export const workerTask = ({
   if (transaction.config.skipWorker) {
     return undefined;
   }
+
+  // regen callers on every render to avoid mem leaks.
+  //callers.clear();
 
   const currentTasks = transaction.tasks;
   const indexOfPatchNode = currentTasks.indexOf(Internals.tasks.patchNode);
@@ -29,7 +32,7 @@ export const workerTask = ({
     }
 
     if (typeof x === 'function') {
-      const __caller = getUUID();
+      const __caller = x.__caller || getUUID();
       callers.set(__caller, x);
       x.__caller = __caller;
       return { __caller };
@@ -44,6 +47,17 @@ export const workerTask = ({
         __link,
         isSvg,
       };
+
+      for (const attrName in x.attributes) {
+        const val = x.attributes[attrName];
+
+        if (typeof val === 'function') {
+          const __caller = val.__caller || getUUID();
+          callers.set(__caller, val);
+          val.__caller = __caller;
+          x.attributes[attrName] = { __caller };
+        }
+      }
 
       linker.set(x, retVal);
       x.isSvg = isSvg;
@@ -67,14 +81,24 @@ export const workerTask = ({
 }, {
   subscribe: () => {
     // Set up external api.
+    // @ts-ignore
     controller.callFunction = (uuid, caller) => {
-      callers.get(caller)();
+      const func = callers.get(caller);
+
+      if (typeof func !== 'function') {
+        console.error('Missing func', caller);
+      }
+      else {
+        func();
+      }
     };
 
+    // ignore this, just for early testing...
     const window = {
       innerHeight: 144,
     };
 
+    // @ts-ignore
     global.window = new Proxy({}, {
       get: (target, keyName) => {
         return window[keyName];

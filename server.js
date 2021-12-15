@@ -24,8 +24,6 @@ use(workerTask({
   getProperty: async (uuid, globalObject, keyName) => {
     ee.emit(`getProperty:${uuid}`, { globalObject, keyName });
   },
-
-  controller,
 }));
 
 // Serve this directory for static files.
@@ -70,6 +68,8 @@ wss.on('connection', ws => {
     ee.removeAllListeners();
   });
 
+  // Need to proxy global and function calls from main thread to
+  // proxy thread.
   createNodeWorker('./server-worker.js', patches => {
     ws.send(JSON.stringify(patches));
   });
