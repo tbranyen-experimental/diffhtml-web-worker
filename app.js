@@ -1,5 +1,4 @@
 import { html } from 'diffhtml';
-import { createState } from 'diffhtml-components';
 
 const rotate = (time, div) => `rotate(${(time / div) * 360}, 75, 75)`;
 
@@ -25,10 +24,6 @@ function renderClock(time = new Date()) {
 }
 
 export default function App({ threadId }) {
-  const [ state, setState ] = createState({
-    windowHeight: null,
-  });
-
   // TODO implement function calls and DOM/BOM access, keep hoisted from render
   // to avoid duplication function references.
   async function getWindowHeight() {
